@@ -19,10 +19,12 @@
     </section>
 
     <section class="main-content">
-      {{ content }}
+        {% for post in site.posts %}
+        <li>{{ post.date | date_to_string }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></li>
+        {% endfor %}
 
       <footer class="site-footer">
-          <span class="site-footer-owner"><a href="{{ site.blog_url }}">WangChuArc's Github</a>.</span>
+          <span class="site-footer-owner"><a href="{{ site.blog_url }}">{{ site.title }}</a>.</span>
       </footer>
     </section>
 

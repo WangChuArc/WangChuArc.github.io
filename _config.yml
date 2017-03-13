@@ -1,5 +1,7 @@
-title: Cayman theme
-description: Cayman is a clean, responsive theme for GitHub Pages.
-show_downloads: true
+title: WangChuArc's Blog
+description: 纪录技术和生活的地方
+show_downloads: false
+github_url: https://github.com/WangChuArc/
+blog_url: http://localhost:4000/
 google_analytics:
-theme: 
+theme: jekyll-theme-cayman
