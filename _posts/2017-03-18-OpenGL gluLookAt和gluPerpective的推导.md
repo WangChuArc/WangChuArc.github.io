@@ -69,7 +69,7 @@ $$
  \begin{matrix}
  axisX.x & axisX.y & axisX.z \\
  axisY.x & axisY.y & axisY.z \\
- axisZ.x & axisZ.y & axisZ.z \\
+ axisZ.x & axisZ.y & axisZ.z
  \end{matrix}
 $$
 
@@ -84,9 +84,9 @@ $$
 1 & 0 & 0 & -eyeX \\
 0 & 1 & 0 & -eyeY \\
 0 & 0 & 1 & -eyeZ \\
-0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1
 \end{matrix}
-&&
+$$
 
 我们当然希望做一次矩阵运算就解决了旋转和位移的问题。因此要合并矩阵。那么我们需要先将旋转矩阵也处理成1个4x4的仿射变换矩阵。如下：
 
@@ -95,8 +95,9 @@ $$
 axisX.x & axisX.y & axisX.z & 0 \\
 axisY.x & axisY.y & axisY.z & 0 \\
 axisZ.x & axisZ.y & axisZ.z & 0 \\
-0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1
 \end{matrix}
+$$
 
 我们现在要做的事就是合并这两个矩阵。那么问题来了：
 我们是先做平移还是先做旋转呢？
@@ -120,8 +121,9 @@ $$
 axisX.x & axisX.y & axisX.z & axisX*eye \\
 axisY.x & axisY.y & axisY.z & axisY*eye \\
 axisZ.x & axisZ.y & axisZ.z & axisZ*eye \\
-0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1
 \end{matrix}
+$$
 
 ---
 
