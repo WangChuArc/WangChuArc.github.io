@@ -158,7 +158,7 @@ $$
 
 关于其投影的运算，我们后面再说，先看这个`平截头体`的范围是怎么确定的。
 
-![](../assets/images/opengl/frustums.PNG)
+![](../assets/images/opengl/frustums2.PNG)
 
 如图所示，我们可以由4个参数来确定这个`平截头体`的大小，分别是`角a`、`角b`、`近平面z坐标`、`远平面z坐标`。
 
