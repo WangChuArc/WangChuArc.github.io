@@ -7,7 +7,7 @@
 ---
 
 首先，说一点预备知识。大家都知道OpenGL的坐标系是右手坐标系。如果按照平常习惯放置x轴和y轴的话(x轴正方向从左至右，y轴正方向从下至上)，z轴正方向则为从前向后，即人眼睛看向x轴负方向，如图：
-![](https://github.com/WangChuArc/WangChuArc.github.io/blob/master/assets/images/opengl/axis.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/axis.PNG)
 其中红、绿、蓝(rgb)色实线分别代表x、y、z轴正方向，而虚线代表负方向。我们往OpenGL里面输入的点坐标就是在这个坐标系下了。
 
 让我们稍微回顾一下渲染流程。首先顶点着色器对输入的顶点属性进行计算，往往是计算以得到矩阵变换后的顶点的新坐标。如果是实时渲染的话，很可能光照也是在这一阶段计算的(黑暗之魂3作为16年的3A游戏，光照结果也是插值得到的)。然后是组装图元、剪裁、光栅化、片元着色、测试、混合。
@@ -17,7 +17,7 @@
 那么怎么界定这个范围呢？
 
 这个范围其实就是一个以原点为中心，边长为2的正方体。正方体内的点(就是该点x、y、z坐标分别都在-1~1以内)，就会被光栅化，参与到片元计算。如图所示。
-![](https://github.com/WangChuArc/WangChuArc.github.io/blob/master/assets/images/opengl/device.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/device.PNG)
 图中两个圆形代表z轴与正方体平面的交点，为了方便读者理解，没有其他意思。
 
 这个正方体围成的空间，叫做**剪裁空间**。
@@ -146,11 +146,11 @@ $$
 
 说到近大远小，我们往往会想象出一`四棱锥体`。
 
-![](https://github.com/WangChuArc/WangChuArc.github.io/blob/master/assets/images/opengl/rect pyramid.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/rect pyramid.PNG)
 
 如图所示，这种四棱锥体，在接近眼睛的位置，即使很小的物体也能遮住整个视野，这点和我们人眼的视野原理很像。但是，我们的计算机系统最终会把物体投影到屏幕上。如果你不是刻意去模拟一个眼睛的话，通常情况下不会被小物体遮蔽视野。所以我们要投影的区域其实是这样的：
 
-![](https://github.com/WangChuArc/WangChuArc.github.io/blob/master/assets/images/opengl/frustums.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/frustums.PNG)
 
 相当于一个大四棱锥去掉一个小四棱锥。这种结构一般被称为`平截头体`或者`视锥`(Frustums)。
 
@@ -158,7 +158,7 @@ $$
 
 关于其投影的运算，我们后面再说，先看这个`平截头体`的范围是怎么确定的。
 
-![](https://github.com/WangChuArc/WangChuArc.github.io/tree/master/assets/images/opengl/frustums2.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/frustums2.PNG)
 
 如图所示，我们可以由4个参数来确定这个`平截头体`的大小，分别是`角a`、`角b`、`近平面z坐标`、`远平面z坐标`。
 
@@ -176,7 +176,7 @@ gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear, GLdouble zfar);
 
 下面我们来看`平截头体`的俯视图。
 
-![](https://github.com/WangChuArc/WangChuArc.github.io/tree/master/assets/images/opengl/vertical view.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/vertical view.PNG)
 
 我们假设`AB`长为1，`E`是`平截头体`中的一点。因为`平截头体`中的点最终要映射到`剪裁空间`中，因此我们可以把点`C`看作是`E`最终在剪裁空间中投影平面的相对位置。
 而根据三角形相似，我们知道`E.x`/`E.z` = `BC`/`OB`。
