@@ -150,7 +150,7 @@ $$
 
 如图所示，这种四棱锥体，在接近眼睛的位置，即使很小的物体也能遮住整个视野，这点和我们人眼的视野原理很像。但是，我们的计算机系统最终会把物体投影到屏幕上。如果你不是刻意去模拟一个眼睛的话，通常情况下不会被小物体遮蔽视野。所以我们要投影的区域其实是这样的：
 
-![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/frustums.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/Frustums.PNG)
 
 相当于一个大四棱锥去掉一个小四棱锥。这种结构一般被称为`平截头体`或者`视锥`(Frustums)。
 
@@ -158,7 +158,7 @@ $$
 
 关于其投影的运算，我们后面再说，先看这个`平截头体`的范围是怎么确定的。
 
-![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/frustums2.PNG)
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/opengl/Frustums2.PNG)
 
 如图所示，我们可以由4个参数来确定这个`平截头体`的大小，分别是`角a`、`角b`、`近平面z坐标`、`远平面z坐标`。
 
