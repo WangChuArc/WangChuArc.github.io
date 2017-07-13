@@ -70,7 +70,7 @@ axisY.normalize() // 其实z轴y轴都是单位向量，不归一化也可以
 知道了新坐标系的三个基之后，我们就可以构建这个旋转矩阵了。
 
 
- `$
+ $$
  \left[
  \begin{matrix} 
  axisX.x & axisX.y & axisX.z \\
@@ -78,7 +78,7 @@ axisY.normalize() // 其实z轴y轴都是单位向量，不归一化也可以
  axisZ.x & axisZ.y & axisZ.z
  \end{matrix} 
  \right]
- $`
+ $$
 
 矩阵如上。但是光有矩阵还不够。想要做到在`eye`点观察目标的效果，还要将坐标原点移动到`eye`的位置。当然，相同的操作我们也可以解释为"坐标系中物体朝相反方向移动"。
 
@@ -86,7 +86,7 @@ axisY.normalize() // 其实z轴y轴都是单位向量，不归一化也可以
 
 那么很容易理解，我们这个做移动的仿射变换矩阵如下：
 
-`$
+$$
 \left[
 \begin{matrix}
 1 & 0 & 0 & -eyeX \\
@@ -95,11 +95,11 @@ axisY.normalize() // 其实z轴y轴都是单位向量，不归一化也可以
 0 & 0 & 0 & 1
 \end{matrix}
 \right]
-$`
+$$
 
 我们当然希望做一次矩阵运算就解决了旋转和位移的问题。因此要合并矩阵。那么我们需要先将旋转矩阵也处理成1个4x4的仿射变换矩阵。如下：
 
-`$
+$$
 \left[
 \begin{matrix}
 axisX.x & axisX.y & axisX.z & 0 \\
@@ -108,7 +108,7 @@ axisZ.x & axisZ.y & axisZ.z & 0 \\
 0 & 0 & 0 & 1
 \end{matrix}
 \right]
-$`
+$$
 
 我们现在要做的事就是合并这两个矩阵。那么问题来了：
 我们是先做平移还是先做旋转呢？
@@ -127,7 +127,7 @@ $`
 
 因此我们最后得到的`gluLookAt`的旋转矩阵就是
 
-`$
+$$
 \left[
 \begin{matrix}
 axisX.x & axisX.y & axisX.z & axisX*eye \\
@@ -136,7 +136,7 @@ axisZ.x & axisZ.y & axisZ.z & axisZ*eye \\
 0 & 0 & 0 & 1
 \end{matrix}
 \right]
-$`
+$$
 
 ---
 
@@ -192,7 +192,7 @@ gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear, GLdouble zfar);
 
 `OB`的值是多少呢？由图可知，`OB`/`AB` = `cot(fovx/2)`，`fovx` = `fovy`/`aspect`，由此可知，这里`OB`的值是一个常数，我们不妨设为`d`。那么`C.x`的值当为`E.x`/`E.z`\*`d`。同理可得`C.y`得值为`E.y`/`E.z`\*`d`。点`E`最终在屏幕上得投影位置跟它的z坐标成反比。那么构建怎样的矩阵才能使转换后的x、y坐标与z坐标成反比呢？线性变换矩阵是做不到这点的。因此我们还是要构建一个4x4的仿射变换矩阵，如下：
 
-`$
+$$
 \left[
 \begin{matrix}
 \frac{1}{aspect} & 0 & 0   & 0 \\
@@ -201,7 +201,7 @@ gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble znear, GLdouble zfar);
 0        & 0 & \frac{1}{d} & 0
 \end{matrix}
 \right]
-$`
+$$
 
 一个向量`v`乘此矩阵后得到向量`v`: \[ x/aspect, y, z, z/d \]，归一化处理后等于向量\[ x*d/(aspect * z), y*d/z, d, 1 \]。
 
@@ -224,7 +224,7 @@ B == 2*zfar*znear/(d*(zfar - znear));
 
 另外还有一个小技巧。我们知道计算机做除法比做乘法麻烦得多，因此在`透视投影`矩阵中我们不使第4行第3列的值为`-1/d`而是`-1`，然后将矩阵中其他所有值乘`d`。所以我们最后得到的矩阵如下：
 
-`$
+$$
 \left[
 \begin{matrix}
 \frac{d}{aspect} & 0 & 0                             & 0                               \\
@@ -233,6 +233,6 @@ B == 2*zfar*znear/(d*(zfar - znear));
 0                & 0 & -1                            & 0
 \end{matrix}
 \right]
-$`
+$$
 
 以上就是`gluLookAt`和`gluPerspective`两个函数的完整推导。
