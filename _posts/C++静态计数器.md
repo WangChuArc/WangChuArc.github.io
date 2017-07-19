@@ -1,0 +1,210 @@
+---
+---
+
+今天这篇博客讲一下我从知乎上看来的一个有意思的玩具:C++的静态计数器。如下所示:
+```c++
+const int a = next();
+const int b = next();
+const int c = next();
+const int d = next();
+std::cout << a << b << c << d << std::endl; // 0123
+```
+
+是的，就是有这种操作。不依赖宏或者其他的什么工具，只用编译器实现C++的静态计数器。
+
+说到这里，大家可肯会觉得：这太违反常识了。C++的静态计算(模板元编程)是基于类型系统的，类型系统是在编译期确定的，没法动态改变，因此模板元编程中的变量类似于函数式语言里那种 *"不能变的变量"* 。也因为如此，我们才能做模式匹配，用函数式编程那套概念来编程。这个东西连状态都没有，怎么做计数器？
+
+这里，我要说的是，虽然模板元编程大部分是用函数式编程那一套，但还是有一些差别的。
+
+第一点差别，就是`SFINAE`。C++选择要跳转的函数，不完全靠模式匹配：
+```c++
+
+template<int N>
+struct Number{ static const int value = N; };
+
+template<int L, int R, typename = typename Number<L>::type>
+constexpr int add (Number<L> l, Number<R> r) { return L + R; }
+
+template<int L, int R>
+constexpr int add2 (Number<L> l, Number<R> r) { return L + R; }
+}
+
+```
+如上所示，其中的`add`和`add2`函数，在模式匹配的概念下完全相同，没法选择。但在C++中，通过`SFINAE`技巧，我们还是能找到其中正确的那个：没有特化的`Number`勒种没有`type`的值，调用`add`函数会产生编译错误。
+
+第二点差别，就是函数调用时的隐式类型转换：
+```c++
+template<int L, int R>
+constexpr int add3 (float, Number<L> l, Number<R> r) { return L + R;
+
+template<int L, int R>
+constexpr int add3 (int, Number<L> l, Number<R> r) { return L + R + 1; }
+
+const int n = add3(0, Number<1>{}, Number<2>{}); // 4
+```
+如上所示，在实际调用过程中，因为`隐式类型转换`的存在，两个`add3`函数都是符合条件的。但是调用时传入的第一个参数是`0`，属于`int`类型，下面那个`add3`函数更加合适，因此会调用下面的`add3`函数。
+
+将这两点综合起来，我们就能一定程度上控制函数调用的选择了，那么自然也就控制了函数的输出，那么静态计数器似乎也有点眉目了。
+
+但是完整实现一个静态计数器，现在对我们来说，还是太复杂了。这里我们不妨先订一个"小目标"，也是实现静态计数器的关键点之一，那就是想办法实现一个带状态的静态函数，形如：
+```c++
+const int i = func();
+const int j = func();
+static_assert(i != j, "not a pure func with state");
+```
+而函数式编程范式里的函数，都是不带状态的"纯函数"，也就是说：*对于一个任意函数，如果你每次调用它时有相同的输入，那么这个函数会有相同的输出*。
+
+因此我们要想写一个带状态的静态函数，就要用函数式编程以外的东西。
+
+那么很自然的，我们来尝试一下：
+```c++
+struct Flag {};
+
+template<int L, int R>
+constexpr int add(float, Number<L>, Number<R>) { return L + R; }
+
+template<int L, int R, typename = typename Flag::type>
+constexpr int add(int, Number<L>, Number<R>) { return L + R + 1; }
+```
+然后调用它：
+```c++
+const int a = add(0, Number<1>{}, Number<2>{}); // 上面那个
+typedef Flag::type int;
+const int b = add(0, Number<1>{}, Number<2>{}); // 下面那个
+```
+如果你在读到这篇文章之前，曾尝试过写一个静态计数器的话，那么我猜你一定写出过（起码考虑过）形如上面的代码。不管它外形如何，本质就是在第一次函数调用结束后，通过定义某个东西（无论是在类内还是类外，无论是定义某个变量、函数还是类型或者其他什么东西），使得`SFINAE`的结果改变，来控制函数的输出。
+
+然后你就会发现，**这是实现不了的**。
+
+这里我要说一句。虽然这种方法实现不了，但这不是函数式编程范式的限制。`SFINAE`不是函数式编程中的东西。我们尝试用`SFINAE`来突破函数式编程的限制，但是失败了。
+
+那么我们想做的带状态的静态函数要怎么实现呢？
+
+**就是靠我们刚才尝试的这种方法**。怎么样，是不是觉得博主满嘴胡言乱语石乐志？
+
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/i_am_erudite.jpg)
+
+博主真没胡说，真的有人找到了一个东西，可以达到我们的需求，用来控制`SFINAE`的结果。
+
+**那就是友元函数**。
+
+具体的操作流程是这样的：
+
+1. 我们先定义一个类`CA`，然后在`CA`中**声明**友元函数`ff`,`ff`要返回一个编译期常数，比如这样：`friend constexpr int ff();`
+2. 我们再定义一个**类模板**`CB`，在其中实现友元函数`ff`的定义，比如：`friend constexpr int CA::ff() { return 0; }`
+3. 利用我们刚刚设计好的两个类和友元函数，来控制`SFINAE`的输出。
+
+完了。齐活了。根据操作流程，我们只要将刚才写的代码稍作修改，然后加上这两个类就可以用了，代码如下：
+```c++
+struct CA { friend constexpr int ff(); };
+
+template<int = 0>
+struct CB { friend constexpr int CA::ff() { return 0; } };
+
+template<int L, int R>
+constexpr int add(float, Number<L>, Number<R>) { return L + R; }
+
+template<int L, int R, int = ff()>
+constexpr int add(int, Number<L>, Number<R>) { return L + R + 1; }
+```
+然后调用`add`函数的时候，如果你没有实例化`CB`，那么`CA`中的`ff`函数就没有定义，根据`SFINAE`你会调用上面的`add`函数。如果你实例化了`CB`，那么就会调用下面的`add`函数。
+
+怎么样？是不是原理特别简单？有兴趣的朋友不妨亲自去试一试。
+
+**然后你就会发现，这个代码还是通不过编译**。
+
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/00164ea3d475e22381bea22c4f07b788.jpg)
+
+![](https://github.com/WangChuArc/WangChuArc.github.io/raw/master/assets/images/23fca7ad4ffcb337e58dbbf23839d9c6.png)
+
+**但是！但是我们离成功已经很近了**。在这里，为了成功在`CB`中定义友元函数`ff`，我们需要用到一个小技巧。
+
+大家知道我们在定义一个类的时候可以在类中重载运算符，比如加法运算符`operator +`。重载运算符之后，如果我们想要调用这个`operator +`运算符的时候，并不需要显式写出它的限定域，直接调用就可以。比如如下代码：
+```c++
+struct SomeStruct
+{
+    int v;
+    SomeStruct operator +(SomeStruct obj)
+    {
+        return SomeStruct{ v + obj.v };
+    }
+};
+```
+调用代码：
+```c++
+SomeStruct a = SomeStruct{1} + SomeStruct{2}; // 而不用写 SomeStruct::operator+
+```
+这种规则叫做`ADL`[argument-depentment lookup](https://en.wikipedia.org/wiki/Argument-dependent_name_lookup)，对函数调用也有效。我在这里简单说明一下，就是当你调用某个函数`F`式时，如果函数的参数中有类型`A`，那么编译器除了会在现有作用域查找函数`F`的函数定义外，也会在类`A`的限定域内查找`F`的定义。
+
+以我们刚写的`SomeStruct`为例，因为`operator +`的参数是`SomeStruct`，因此它也会在`SomeStruct::`限定域内查找符合规则的`operator +`的定义，并且成功找到合适的定义然后调用。
+
+而我们就是要利用`ADL`规则来在`CB`中实现`CA`中声明的友元函数的定义（是不是有点绕？）。
+
+那我们再次稍稍改一下代码：
+```c++
+struct CA { friend constexpr int ff(CA); };
+
+template<int>
+struct CB { friend constexpr int ff(CA) { return 0; } };
+
+template<int L, int R>
+constexpr int add(float, Number<L>, Number<R>) { return L + R; }
+
+template<int L, int R, int = ff(CA{})>
+constexpr int add(int, Number<L>, Number<R>) { return L + R + 1; }
+```
+然后在调用的时候：
+```c++
+const int a = add(0, Number<1>{}, Number<2>{}); // 3 调用上面的add函数
+auto obj = CB<0>{};
+const int b = add(0, Number<1>{}, Number<2>{}); // 4 调用下面的add函数
+```
+啊，大自然真是鬼斧神工，原来编译器还有这种漏洞。
+
+好了，我们成功地让计算编译期常量的函数有了状态。虽然这个状态很简陋：**首先，它是单向的**。因为你将`CB`实例化后就不能取消。**其次，它只有两个值**。分别是`ff`有定义和没定义。但没关系，计算机只有`0`和`1`两个值，一样创造绚丽多彩的虚拟世界。
+
+如果你有足够的耐心的话。
+
+其实我认为这就是实现静态计数器最关键的技术点了。剩下的无非是一些工程上的问题，没有难点了。
+
+但工作还是要做，静态计数器又不会自己跳出来。那么现在我们稍微将`CA`包装一下，包装进一个类模板中，让它提供多个状态位。而`CB`类的实例化，我们也不再手动去写，而放在函数调用中自动完成。最后，`add`函数当然也不再用了，要改成计数函数。
+
+实现代码如下：
+```c++
+template<int N>
+struct Flag { friend constexpr int setFlag(Flag<N>); };
+
+template<int N>
+struct Writer
+{
+    friend constexpr int setFlag(Flag<N>) { return 0; }
+};
+
+template<int N>
+constexpr int reader(float, Flag<N>) { return N; }
+
+template<int N, int = setFlag(Flag<N>{})>
+constexpr int reader(int, Flag<N>, int value = reader(0, Flag<N + 1>{}))
+{
+    return value;
+}
+
+template<int N = reader(0, Flag<0>{}), int = sizeof(Writer<N>) >
+constexpr int next() { return N; }
+```
+这里`CA`改成了`Flag`，`CB`改成了`Writer`，`ff`改成了`setFlag`，`add`改成了`reader`，而为了自动实例化`Writer`，我们加了一个`next`函数，来间接调用`reader`并实例化`writher`，而且这样调用`next`函数也优雅一些。
+
+下面是调用：
+```c++
+const int a = next();
+const int b = next();
+const int c = next();
+const int d = next();
+std::cout << a <<"  "<< b << "  " << c << "  " << d << std::endl; // 0 1 2 3
+```
+
+这里要提醒大家一点：大家看第二个`reader`函数的第三个参数，我们将求值放在了默认参数的位置而不是函数体中。因为传统上，编译器认为`reader`函数是`纯函数`，当调用它时，如果输入参数相同，那么输出也会相同，因此编译器会缓存`reader`函数的输出，而不是在每次调用`reader`的时候重新计算，这样就不会有正确的结果。因此我们利用默认参数要求编译器每次调用`reader`函数都重新求值，避免了这个问题。相关讨论[请看这里](https://stackoverflow.com/questions/45054503/why-does-removing-the-default-parameter-break-this-constexpr-counter)
+
+如果你看了那篇讨论就会发现，其实早在2015-4，这种利用友元函数实现带状态的模板元编程的技术，就被标记为"ill-formed"（[这里](http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#2118)）。不过C++17的标准都出来了，这个问题也没被针对，还是能用。这种晦涩难懂的技术本来就很难说有什么用处，更何况被标为"ill-formed"。不过这个例子中涉及到的技术还是值得看一看的。
+
+下面是我在知乎上看见的相关问题的[链接](https://zhuanlan.zhihu.com/p/24910829)
